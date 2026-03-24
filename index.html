@@ -815,49 +815,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Anime Checklist">
 
-<!-- PWA Service Worker -->
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
-const CACHE_NAME = 'anime-checklist-v3';
-const urlsToCache = [
-    '/',
-    '/#list',
-    '/#top'
-];
-
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-    );
-});
-
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request)
-            .then(response => response || fetch(event.request))
-    );
-});
-
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
-});
-        `)
-        .catch(err => console.log('SW registration failed'));
-    });
-}
+	<script>
+		if ('serviceWorker' in navigator) {
+  		navigator.serviceWorker.register('/service-worker.js')
+    		.then(() => console.log("Service Worker Registered"));
+		}
+	</script>
 
 // Auto-save every 30 seconds
 setInterval(() => {
