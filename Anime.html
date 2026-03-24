@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Checklist</title>
+    <link rel="manifest" href="data:application/manifest+json,{
+        'name': 'Anime Checklist',
+        'short_name': 'AnimeList',
+        'description': 'Track your anime watchlist with ratings and stats',
+        'start_url': '.',
+        'display': 'standalone',
+        'background_color': '#1a1a2e',
+        'theme_color': '#16213e',
+        'icons': [{
+            'src': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiBmaWxsPSIjMTYyMTNlIi8+CjxwYXRoIGQ9Ik0xMjEgMTI0TDk2IDEwNEw3MSAxMjRMOTYgMTQ0TDkxIDEyNEwxMjEgMTI0WiIgZmlsbD0iI2ZmZiIvPgo8L3N2Zz4K',
+            'sizes': '192x192',
+            'type': 'image/svg+xml'
+        }]
+    }">
+    <meta name="theme-color" content="#16213e">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tab-container {
+            display: flex;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 16px;
+            background: none;
+            border: none;
+            color: #b0b0b0;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: rgba(78,205,196,0.3);
+            color: #4ecdc4;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .add-form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group.full {
+            flex: 100%;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78,205,196,0.2);
+        }
+
+        .add-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(78,205,196,0.4);
+        }
+
+        .genre-filter {
+            margin-bottom: 20px;
+        }
+
+        .genre-select {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        .list::-webkit-scrollbar-thumb {
+            background: rgba(78,205,196,0.5);
+            border-radius: 3px;
+        }
+
+        .anime-item {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .anime-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border-color: rgba(78,205,196,0.4);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .anime-poster {
+            width: 60px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
+
+        .anime-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .anime-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #4ecdc4;
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox.checked {
+            background: #4ecdc4;
+            border-color: #4ecdc4;
+        }
+
+        .custom-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .rating-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            width: 18px;
+            height: 18px;
+            background: rgba(255,255,255,0.3);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .star.filled {
+            background: #ffd700;
+            box-shadow: 0 0 8px rgba(255,215,0,0.6);
+        }
+
+        .rating-text {
+            font-size: 14px;
+            color: #aaa;
+            min-width: 30px;
+        }
+
+        .delete-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(255,107,107,0.3);
+            color: #ff6b6b;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .delete-btn:hover {
+            background: rgba(255,107,107,0.6);
+            transform: scale(1.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .anime-item {
+                padding: 16px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .anime-poster {
+                align-self: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎌 Anime Checklist</h1>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalAnime">0</div>
+                <div>Watched</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalUnwatched">0</div>
+                <div>Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgRating">-</div>
+                <div>Avg Rating</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalAnimeAll">0</div>
+                <div>Total</div>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <button class="tab-button active" onclick="switchTab('list')">📋 Watchlist</button>
+            <button class="tab-button" onclick="switchTab('top')">🏆 Top Rated</button>
+        </div>
+
+        <!-- Watchlist Tab -->
+        <div id="list-tab" class="tab-content active">
+            <div class="add-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="text" id="animeTitle" placeholder="Anime title..." required>
+                    </div>
+                    <div class="form-group">
+                        <input type="url" id="animePoster" placeholder="Poster URL (optional)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <select id="animeGenre">
+                            <option value="all">All Genres</option>
+                            <option value="action">Action</option>
+                            <option value="adventure">Adventure</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="drama">Drama</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="horror">Horror</option>
+                            <option value="mecha">Mecha</option>
+                            <option value="romance">Romance</option>
+                            <option value="sci-fi">Sci-Fi</option>
+                            <option value="slice-of-life">Slice of Life</option>
+                            <option value="sports">Sports</option>
+                            <option value="supernatural">Supernatural</option>
+                        </select>
+                    </div>
+                    <button class="add-button" onclick="addAnime()">➕ Add Anime</button>
+                </div>
+            </div>
+
+            <div class="watched-list">
+                <h3 style="margin-bottom: 15px; font-size: 20px; color: #4ecdc4;">✅ Watched (Alphabetical)</h3>
+                <div id="watchedAnimes" class="list"></div>
+            </div>
+
+            <div class="unwatched-list" style="margin-top: 30px;">
+                <h3 style="margin-bottom: 15px; font-size: 20px; color: #ff6b6b;">⏳ Unwatched (Alphabetical)</h3>
+                <div id="unwatchedAnimes" class="list"></div>
+            </div>
+        </div>
+
+        <!-- Top Rated Tab -->
+        <div id="top-tab" class="tab-content">
+            <div class="genre-filter">
+                <select id="topGenreFilter" class="genre-select" onchange="filterTopRated()">
+                    <option value="all">All Time Top Rated</option>
+                    <option value="action">Action</option>
+                    <option value="adventure">Adventure</option>
+                    <option value="comedy">Comedy</option>
+                    <option value="drama">Drama</option>
+                    <option value="fantasy">Fantasy</option>
+                    <option value="horror">Horror</option>
+                    <option value="mecha">Mecha</option>
+                    <option value="romance">Romance</option>
+                    <option value="sci-fi">Sci-Fi</option>
+                    <option value="slice-of-life">Slice of Life</option>
+                    <option value="sports">Sports</option>
+                    <option value="supernatural">Supernatural</option>
+                </select>
+            </div>
+            <div id="topRatedList" class="list"></div>
+        </div>
+    </div>
+
+    <script>
+        let animes = [];
+        let currentTab = 'list';
+
+        // Genres for filtering
+        const genres = ['all', 'action', 'adventure', 'comedy', 'drama', 'fantasy', 'horror', 
+                       'mecha', 'romance', 'sci-fi', 'slice-of-life', 'sports', 'supernatural'];
+
+        // Load data on start
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAnimes();
+            updateStats();
+            renderLists();
+            renderTopRated();
+        });
+
+        function addAnime() {
+            const title = document.getElementById('animeTitle').value.trim();
+            const poster = document.getElementById('animePoster').value.trim();
+            const genre = document.getElementById('animeGenre').value;
+
+            if (!title) {
+                alert('Please enter an anime title!');
+                return;
+            }
+
+            const newAnime = {
+                id: Date.now().toString(),
+                title: title,
+                poster: poster || '',
+                watched: false,
+                rating: 0,
+                genre: genre,
+                createdAt: new Date().toISOString()
+            };
+
+            animes.unshift(newAnime);
+            saveAnimes();
+            renderLists();
+            updateStats();
+
+            // Clear form
+            document.getElementById('animeTitle').value = '';
+            document.getElementById('animePoster').value = '';
+            document.getElementById('animeGenre').value = 'all';
+        }
+
+        function toggleWatched(id) {
+            const anime = animes.find(a => a.id === id);
+            if (anime) {
+                anime.watched = !anime.watched;
+                if (!anime.watched) {
+                    anime.rating
+                anime.rating = 0; // Reset rating when moving to unwatched
+            }
+            saveAnimes();
+            renderLists();
+            updateStats();
+            renderTopRated();
+        }
+    }
+
+    function setRating(id, rating) {
+        const anime = animes.find(a => a.id === id);
+        if (anime) {
+            anime.rating = rating;
+            saveAnimes();
+            updateStats();
+            renderTopRated();
+        }
+    }
+
+    function deleteAnime(id) {
+        if (confirm('Delete this anime?')) {
+            animes = animes.filter(a => a.id !== id);
+            saveAnimes();
+            renderLists();
+            updateStats();
+            renderTopRated();
+        }
+    }
+
+    function renderLists() {
+        // Sort watched and unwatched alphabetically
+        const watched = animes.filter(a => a.watched).sort((a, b) => a.title.localeCompare(b.title));
+        const unwatched = animes.filter(a => !a.watched).sort((a, b) => a.title.localeCompare(b.title));
+
+        renderAnimeList('watchedAnimes', watched);
+        renderAnimeList('unwatchedAnimes', unwatched);
+    }
+
+    function renderAnimeList(containerId, animeList) {
+        const container = document.getElementById(containerId);
+    if (animeList.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <div style="font-size: 18px; margin-bottom: 10px;">No ${containerId === 'watchedAnimes' ? 'watched' : 'unwatched'} anime yet</div>
+                <div>Add some anime to get started!</div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = animeList.map(anime => `
+        <div class="anime-item">
+            ${anime.poster ? `<img src="${anime.poster}" alt="${anime.title}" class="anime-poster" onerror="this.style.display='none'">` : ''}
+            <div class="anime-info">
+                <div class="anime-title">${escapeHtml(anime.title)}</div>
+                <div class="checkbox-container">
+                    <div class="custom-checkbox ${anime.watched ? 'checked' : ''}" 
+                         onclick="toggleWatched('${anime.id}')"></div>
+                    <span style="font-size: 14px; color: #aaa;">${anime.watched ? 'Watched' : 'Unwatched'}</span>
+                </div>
+                
+                <!-- ⭐ RATING SECTION - CLICK STARS TO RATE! ⭐ -->
+                ${anime.watched ? `
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <span style="color: #ffd700; font-size: 14px; font-weight: 600;">⭐ Rate:</span>
+                            <div class="stars" style="display: flex; gap: 2px;">
+                                ${Array(10).fill().map((_, i) => `
+                                    <div class="star ${i < anime.rating ? 'filled' : ''}" 
+                                         title="Click to rate ${i + 1}/10"
+                                         onclick="setRating('${anime.id}', ${i + 1})"
+                                         onmouseover="hoverRating('${anime.id}', ${i + 1})"
+                                         onmouseout="clearRatingHover('${anime.id}')"></div>
+                                `).join('')}
+                            </div>
+                            <span class="rating-text" id="rating-${anime.id}" style="min-width: 35px; font-weight: 600; color: #fff;">${anime.rating || 'Tap stars!'}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #aaa;">Click any star to rate (1-10)</div>
+                    </div>
+                ` : ''}
+            </div>
+            <button class="delete-btn" onclick="deleteAnime('${anime.id}')">×</button>
+        </div>
+    `).join('');
+}
+
+    function renderTopRated() {
+        const genre = document.getElementById('topGenreFilter').value;
+        let topRated = animes.filter(a => a.watched && a.rating > 0);
+        
+        if (genre !== 'all') {
+            topRated = topRated.filter(a => a.genre === genre);
+        }
+        
+        // Sort by rating desc, then alphabetically
+        topRated.sort((a, b) => {
+            if (b.rating !== a.rating) return b.rating - a.rating;
+            return a.title.localeCompare(b.title);
+        });
+
+        const container = document.getElementById('topRatedList');
+        if (topRated.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                    <div style="font-size: 18px; margin-bottom: 10px;">No rated anime yet</div>
+                    <div>Watch and rate some anime to see top rated!</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = topRated.slice(0, 50).map((anime, index) => `
+            <div class="anime-item">
+                ${anime.poster ? `<img src="${anime.poster}" alt="${anime.title}" class="anime-poster" onerror="this.style.display='none'">` : ''}
+                <div class="anime-info">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="background: rgba(78,205,196,0.3); color: #4ecdc4; padding: 4px 10px; border-radius: 20px; font-size: 14px; font-weight: 600;">#${index + 1}</span>
+                        <div class="anime-title">${escapeHtml(anime.title)}</div>
+                    </div>
+                    <div class="rating-container">
+                        <div class="stars">
+                            ${Array(10).fill().map((_, i) => `
+                                <div class="star ${i < anime.rating ? 'filled' : ''}"></div>
+                            `).join('')}
+                        </div>
+                        <span class="rating-text">${anime.rating}/10</span>
+                        ${anime.genre !== 'all' ? `<span style="color: #aaa; font-size: 14px;">• ${anime.genre.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function filterTopRated() {
+        renderTopRated();
+    }
+
+    function updateStats() {
+        const watched = animes.filter(a => a.watched).length;
+        const unwatched = animes.filter(a => !a.watched).length;
+        const total = animes.length;
+        const ratedAnimes = animes.filter(a => a.watched && a.rating > 0);
+        const avgRating = ratedAnimes.length > 0 ? 
+            Math.round(ratedAnimes.reduce((sum, a) => sum + a.rating, 0) / ratedAnimes.length * 10) / 10 : 0;
+
+        document.getElementById('totalAnime').textContent = watched;
+        document.getElementById('totalUnwatched').textContent = unwatched;
+        document.getElementById('totalAnimeAll').textContent = total;
+        document.getElementById('avgRating').textContent = avgRating || '-';
+    }
+
+	let ratingHoverId = null;
+	let ratingHoverValue = 0;
+
+	function hoverRating(id, value) {
+    		ratingHoverId = id;
+    		ratingHoverValue = value;
+    		updateRatingHover();
+	}
+
+	function clearRatingHover(id) {
+    		ratingHoverId = null;
+    		ratingHoverValue = 0;
+    		updateRatingHover();
+	}
+
+	function updateRatingHover() {
+    		if (ratingHoverId) {
+        		const ratingText = document.getElementById(`rating-${ratingHoverId}`);
+        		if (ratingText) {
+            			ratingText.textContent = ratingHoverValue;
+        		}
+    		}
+	}
+
+    function switchTab(tab) {
+        currentTab = tab;
+        
+        // Update tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Show/hide tabs
+        document.getElementById('list-tab').classList.toggle('active', tab === 'list');
+        document.getElementById('top-tab').classList.toggle('active', tab === 'top');
+    }
+
+    // Storage functions
+    function saveAnimes() {
+        localStorage.setItem('animeChecklist', JSON.stringify(animes));
+    }
+
+    function loadAnimes() {
+        const saved = localStorage.getItem('animeChecklist');
+        if (saved) {
+            animes = JSON.parse(saved);
+        }
+    }
+
+    // Export/Import
+    function exportData() {
+        const dataStr = JSON.stringify(animes, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `anime-checklist-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedAnimes = JSON.parse(e.target.result);
+                    if (confirm('Import this data? This will replace your current list.')) {
+                        animes = importedAnimes;
+                        saveAnimes();
+                        renderLists();
+                        updateStats();
+                        renderTopRated();
+                    }
+                } catch (err) {
+                    alert('Invalid file format!');
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    // Utility function
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            addAnime();
+        }
+    });
+
+    // Add export/import buttons to UI
+    document.querySelector('.header').insertAdjacentHTML('beforeend', `
+        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="exportData()" style="padding: 8px 16px; background: rgba(78,205,196,0.3); border: 2px solid #4ecdc4; border-radius: 8px; color: #4ecdc4; cursor: pointer;">📤 Export</button>
+            <label for="importFile" style="padding: 8px 16px; background: rgba(255,107,107,0.3); border: 2px solid #ff6b6b; border-radius: 8px; color: #ff6b6b; cursor: pointer;">📥 Import</label>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+    `);
+    </script>
+<link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkFu aW1lIENoZWNrbGlzdCIsCiAgInNob3J0X25hbWUiOiAiQW5pbWVMaXN0 IiwKICAiZGVzY3JpcHRpb24iOiAiVHJhY2sgYW5pbWUgd2l0aCBnZW 5yZXMsIHJhdGluZ3MgcGFuZWwgYW5kIHN0YXRzIiwKICAic3RhcnRfdX JsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJi YWNrZ3JvdW5kX2NvbG9yIjogIiMxYTFhMmUiLAogICJ0aGVtZV9jb2 xvciI6ICIjMTYyMTNlIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAg I CJzcmMiOiAiZGF0YTppbWFnZS9zdmcraHJtbDtiYXNlNjQsUEhOK  iMkJRUYGRkZJVGZGVkdHZ2hpanNu...[truncated base64 icon]",CiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOi AiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0+" />
+<meta name="theme-color" content="#16213e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anime Checklist">
+
+<!-- PWA Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
+const CACHE_NAME = 'anime-checklist-v3';
+const urlsToCache = [
+    '/',
+    '/#list',
+    '/#top'
+];
+
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(urlsToCache))
+    );
+});
+
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => response || fetch(event.request))
+    );
+});
+
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+});
+        `)
+        .catch(err => console.log('SW registration failed'));
+    });
+}
+
+// Auto-save every 30 seconds
+setInterval(() => {
+    if (animes.length > 0) {
+        saveAnimes();
+        console.log('🔄 Auto-saved');
+    }
+}, 30000);
+
+// Offline detection
+window.addEventListener('online', () => {
+    console.log('🌐 Online');
+});
+window.addEventListener('offline', () => {
+    console.log('📴 Offline - App still works!');
+});
+
+// PWA Install Prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install button after 3 seconds
+    setTimeout(() => {
+        showInstallButton();
+    }, 3000);
+});
+
+function showInstallButton() {
+    const installBtn = document.createElement('button');
+    installBtn.innerHTML = '📱 <strong>Add to Home Screen</strong>';
+    installBtn.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        padding: 15px 25px;
+        background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+        border: none;
+        border-radius: 50px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(78,205,196,0.4);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    `;
+    installBtn.onclick = installApp;
+    document.body.appendChild(installBtn);
+}
+
+async function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('Install outcome:', outcome);
+        deferredPrompt = null;
+        
+        // Remove button
+        document.querySelector('button[onclick="installApp()"]').remove();
+    }
+}
+
+// Prevent zoom on iOS
+document.addEventListener('gesturestart', function (e) {
+    e.preventDefault();
+});
+
+// Smooth list scrolling
+document.querySelectorAll('.list').forEach(list => {
+    list.addEventListener('scroll', () => {
+        list.scrollTop = list.scrollTop;
+    });
+});
+
+// Performance optimization
+if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.animationPlayState = 'running';
+            }
+        });
+    });
+    
+    document.querySelectorAll('.anime-item').forEach(item => {
+        observer.observe(item);
+    });
+}
+</script>
+
+<!-- iOS PWA Icons -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMzYiIGZpbGw9IiMxNjIxM2UiLz4KPHBhdGggZD0iTTExNSAxMTdMMzAgOzdMNDUgMTE3TDEwMCA5N0wxMTUgMTE3WiIgZmlsbD0iIzRlY2RjNCIvPgo8L3N2Zz4K">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<style>
+/* PWA Install Animation */
+@keyframes installPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+button[onclick="installApp()"]:hover {
+    animation: installPulse 0.6s ease;
+    box-shadow: 0 15px 40px rgba(78,205,196,0.6) !important;
+}
+
+/* Hide install button on standalone */
+@media (display-mode: standalone) {
+    button[onclick="installApp()"] { display: none !important; }
+}
+
+/* Fullscreen PWA styles */
+@media (display-mode: standalone) {
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    .container { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+}
+</style>
+</body>
+</html>
